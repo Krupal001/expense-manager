@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:intl/intl.dart';
+import '../../../core/constants/app_categories.dart';
 import '../../cubit/expense/expense_cubit.dart';
 import '../../cubit/expense/expense_state.dart';
 import '../../../domain/entities/expense.dart';
@@ -27,16 +28,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
     'All Time'
   ];
 
-  final List<String> _categories = [
-    'All',
-    'Food',
-    'Transport',
-    'Shopping',
-    'Entertainment',
-    'Bills',
-    'Health',
-    'Other'
-  ];
+  final List<String> _categories = AppCategories.allCategories;
 
   @override
   Widget build(BuildContext context) {

@@ -108,7 +108,9 @@ class BudgetCubit extends Cubit<BudgetState> {
 
   Future<void> recalculateBudgetSpending(
       String userId, List<Expense> expenses) async {
+    print('BudgetCubit: Recalculating budget spending for ${expenses.length} expenses');
     final budgets = _currentBudgets.where((b) => b.isActive).toList();
+    print('BudgetCubit: Found ${budgets.length} active budgets');
 
     for (var budget in budgets) {
       // Calculate spent amount for this category
@@ -116,8 +118,8 @@ class BudgetCubit extends Cubit<BudgetState> {
         (expense) =>
             expense.category == budget.category &&
             expense.type == ExpenseType.debit &&
-            expense.date.isAfter(budget.startDate) &&
-            expense.date.isBefore(budget.endDate),
+            expense.date.isAfter(budget.startDate.subtract(const Duration(days: 1))) &&
+            expense.date.isBefore(budget.endDate.add(const Duration(days: 1))),
       );
 
       final totalSpent = categoryExpenses.fold<double>(
@@ -125,11 +127,25 @@ class BudgetCubit extends Cubit<BudgetState> {
         (sum, expense) => sum + expense.amount,
       );
 
+      print('BudgetCubit: ${budget.category} - Current: ₹${budget.spentAmount}, Calculated: ₹$totalSpent (${categoryExpenses.length} expenses)');
+
       // Update budget if spent amount changed
       if (budget.spentAmount != totalSpent) {
+        print('BudgetCubit: Updating ${budget.category} budget spent amount from ₹${budget.spentAmount} to ₹$totalSpent');
         final updatedBudget = budget.copyWith(spentAmount: totalSpent);
         await budgetRepository.updateBudget(updatedBudget);
+        
+        // Update local budget list
+        final index = _currentBudgets.indexWhere((b) => b.id == budget.id);
+        if (index != -1) {
+          _currentBudgets[index] = updatedBudget;
+        }
       }
+    }
+    
+    // Emit updated budgets
+    if (budgets.isNotEmpty) {
+      emit(BudgetLoaded(_currentBudgets));
     }
   }
 

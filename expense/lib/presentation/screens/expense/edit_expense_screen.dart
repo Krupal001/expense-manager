@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
+import '../../../core/constants/app_categories.dart';
 import '../../../domain/entities/expense.dart';
 import '../../cubit/auth/auth_cubit.dart';
 import '../../cubit/auth/auth_state.dart';
@@ -27,18 +28,11 @@ class _EditExpenseScreenState extends State<EditExpenseScreen> {
   late String _selectedCategory;
   late DateTime _selectedDate;
 
-  final List<String> _categories = [
-    'Food',
-    'Transport',
-    'Shopping',
-    'Bills',
-    'Entertainment',
-    'Health',
-    'Education',
-    'Income',
-    'Salary',
-    'Other',
-  ];
+  List<String> get _categories {
+    return _selectedType == ExpenseType.debit 
+        ? AppCategories.expenseCategories 
+        : AppCategories.incomeCategories;
+  }
 
   @override
   void initState() {

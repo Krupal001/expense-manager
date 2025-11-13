@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../cubit/auth/auth_cubit.dart';
 import '../../cubit/auth/auth_state.dart';
 import '../home/home_screen.dart';
+import 'forgot_password_screen.dart';
 import 'register_screen.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -30,15 +31,29 @@ class _LoginScreenState extends State<LoginScreen> {
     return Scaffold(
       body: BlocConsumer<AuthCubit, AuthState>(
         listener: (context, state) {
+          print('LoginScreen: State changed to: ${state.runtimeType}');
           if (state is AuthAuthenticated) {
+            print('LoginScreen: User authenticated, navigating to HomeScreen');
             Navigator.of(context).pushReplacement(
               MaterialPageRoute(builder: (_) => const HomeScreen()),
             );
           } else if (state is AuthError) {
+            print('LoginScreen: Auth error: ${state.message}');
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
                 content: Text(state.message),
                 backgroundColor: Colors.red,
+              ),
+            );
+          } else if (state is AuthLoading) {
+            print('LoginScreen: Auth loading...');
+          } else if (state is AuthOperationSuccess) {
+            print('LoginScreen: Auth operation success: ${state.message}');
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(state.message),
+                backgroundColor: Colors.green,
+                behavior: SnackBarBehavior.floating,
               ),
             );
           }
@@ -204,10 +219,13 @@ class _LoginScreenState extends State<LoginScreen> {
                                 ? null
                                 : () {
                                     if (_formKey.currentState!.validate()) {
+                                      print('LoginScreen: Login button pressed, calling signIn');
                                       context.read<AuthCubit>().signIn(
                                             _emailController.text.trim(),
                                             _passwordController.text,
                                           );
+                                    } else {
+                                      print('LoginScreen: Form validation failed');
                                     }
                                   },
                             style: ElevatedButton.styleFrom(
@@ -236,7 +254,28 @@ class _LoginScreenState extends State<LoginScreen> {
                                   ),
                           ),
                         ),
-                        const SizedBox(height: 24),
+                        const SizedBox(height: 16),
+
+                        // Forgot Password Link
+                        TextButton(
+                          onPressed: () {
+                            Navigator.of(context).push(
+                              MaterialPageRoute(
+                                builder: (_) => const ForgotPasswordScreen(),
+                              ),
+                            );
+                          },
+                          child: Text(
+                            'Forgot Password?',
+                            style: TextStyle(
+                              color: Colors.white.withOpacity(0.9),
+                              fontSize: 15,
+                              fontWeight: FontWeight.w600,
+                              decoration: TextDecoration.underline,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 8),
 
                         // Register Link
                         TextButton(

@@ -1,17 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:intl/intl.dart';
+import '../../../core/constants/app_categories.dart';
+import '../../../domain/entities/expense.dart';
 import '../../cubit/auth/auth_cubit.dart';
 import '../../cubit/auth/auth_state.dart';
 import '../../cubit/expense/expense_cubit.dart';
 import '../../cubit/expense/expense_state.dart';
 import '../../cubit/budget/budget_cubit.dart';
 import '../../cubit/budget/budget_state.dart';
-import '../../../domain/entities/expense.dart';
 import '../analytics/analytics_screen.dart';
+import '../budget/budget_settings_screen.dart';
 import '../expense/all_transactions_screen.dart';
 import '../expense/edit_expense_screen.dart';
-import '../budget/budget_settings_screen.dart';
-import 'package:intl/intl.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -138,6 +139,15 @@ class _HomeScreenState extends State<HomeScreen> {
                     behavior: SnackBarBehavior.floating,
                   ),
                 );
+              } else if (state is ExpenseLoaded) {
+                // Recalculate budget spending when expenses are loaded
+                final authState = context.read<AuthCubit>().state;
+                if (authState is AuthAuthenticated) {
+                  context.read<BudgetCubit>().recalculateBudgetSpending(
+                    authState.user.id, 
+                    state.expenses,
+                  );
+                }
               }
             },
           ),
@@ -187,6 +197,15 @@ class _HomeScreenState extends State<HomeScreen> {
             if (authState is AuthAuthenticated) {
               context.read<ExpenseCubit>().loadExpenses(authState.user.id);
               context.read<BudgetCubit>().loadBudgets(authState.user.id);
+              
+              // Recalculate budget spending after loading expenses
+              final expenseState = context.read<ExpenseCubit>().state;
+              if (expenseState is ExpenseLoaded) {
+                context.read<BudgetCubit>().recalculateBudgetSpending(
+                  authState.user.id, 
+                  expenseState.expenses,
+                );
+              }
             }
           },
           child: SingleChildScrollView(
@@ -715,41 +734,11 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   IconData _getCategoryIcon(String category) {
-    switch (category.toLowerCase()) {
-      case 'food':
-        return Icons.restaurant;
-      case 'transport':
-        return Icons.directions_car;
-      case 'shopping':
-        return Icons.shopping_bag;
-      case 'entertainment':
-        return Icons.movie;
-      case 'bills':
-        return Icons.receipt;
-      case 'health':
-        return Icons.local_hospital;
-      default:
-        return Icons.attach_money;
-    }
+    return AppCategories.getCategoryIcon(category);
   }
 
   Color _getCategoryColor(String category) {
-    switch (category.toLowerCase()) {
-      case 'food':
-        return Colors.orange;
-      case 'transport':
-        return Colors.blue;
-      case 'shopping':
-        return Colors.purple;
-      case 'entertainment':
-        return Colors.pink;
-      case 'bills':
-        return Colors.red;
-      case 'health':
-        return Colors.green;
-      default:
-        return Colors.grey;
-    }
+    return AppCategories.getCategoryColor(category);
   }
 
   void _showAddTransactionOptions(BuildContext context) {
@@ -859,7 +848,9 @@ class _HomeScreenState extends State<HomeScreen> {
     final titleController = TextEditingController();
     final amountController = TextEditingController();
     final descriptionController = TextEditingController();
-    String selectedCategory = 'Food';
+    String selectedCategory = type == ExpenseType.debit 
+        ? AppCategories.expenseCategories.first 
+        : AppCategories.incomeCategories.first;
     DateTime selectedDate = DateTime.now();
 
     showDialog(
@@ -944,15 +935,8 @@ class _HomeScreenState extends State<HomeScreen> {
                       ),
                       prefixIcon: const Icon(Icons.category),
                     ),
-                    items: [
-                      'Food',
-                      'Transport',
-                      'Shopping',
-                      'Entertainment',
-                      'Bills',
-                      'Health',
-                      'Other'
-                    ]
+                    items: AppCategories.getCategoriesForType(
+                            type == ExpenseType.debit ? 'debit' : 'credit')
                         .map((cat) => DropdownMenuItem(
                               value: cat,
                               child: Row(

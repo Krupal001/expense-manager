@@ -11,6 +11,7 @@ import '../../domain/repositories/auth_repository.dart';
 import '../../domain/repositories/expense_repository.dart';
 import '../../domain/repositories/budget_repository.dart';
 import '../../domain/usecases/auth/get_current_user.dart';
+import '../../domain/usecases/auth/reset_password.dart';
 import '../../domain/usecases/auth/sign_in.dart';
 import '../../domain/usecases/auth/sign_out.dart';
 import '../../domain/usecases/auth/sign_up.dart';
@@ -31,6 +32,7 @@ Future<void> init() async {
       signUpUseCase: sl(),
       signOutUseCase: sl(),
       getCurrentUserUseCase: sl(),
+      resetPasswordUseCase: sl(),
     ),
   );
 
@@ -54,6 +56,7 @@ Future<void> init() async {
   sl.registerLazySingleton(() => SignUp(sl()));
   sl.registerLazySingleton(() => SignOut(sl()));
   sl.registerLazySingleton(() => GetCurrentUser(sl()));
+  sl.registerLazySingleton(() => ResetPassword(sl()));
 
   // Use cases - Expense
   sl.registerLazySingleton(() => GetExpenses(sl()));

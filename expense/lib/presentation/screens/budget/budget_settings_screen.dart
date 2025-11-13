@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
+import '../../../core/constants/app_categories.dart';
 import '../../../domain/entities/category_budget.dart';
 import '../../cubit/auth/auth_cubit.dart';
 import '../../cubit/auth/auth_state.dart';
 import '../../cubit/budget/budget_cubit.dart';
 import '../../cubit/budget/budget_state.dart';
+import '../../cubit/expense/expense_cubit.dart';
+import '../../cubit/expense/expense_state.dart';
 
 class BudgetSettingsScreen extends StatefulWidget {
   const BudgetSettingsScreen({super.key});
@@ -15,16 +18,7 @@ class BudgetSettingsScreen extends StatefulWidget {
 }
 
 class _BudgetSettingsScreenState extends State<BudgetSettingsScreen> {
-  final List<String> _categories = [
-    'Food',
-    'Transport',
-    'Shopping',
-    'Bills',
-    'Entertainment',
-    'Health',
-    'Education',
-    'Other',
-  ];
+  final List<String> _categories = AppCategories.expenseCategories;
 
   @override
   void initState() {
@@ -32,6 +26,15 @@ class _BudgetSettingsScreenState extends State<BudgetSettingsScreen> {
     final authState = context.read<AuthCubit>().state;
     if (authState is AuthAuthenticated) {
       context.read<BudgetCubit>().watchBudgets(authState.user.id);
+      
+      // Recalculate budget spending when screen opens
+      final expenseState = context.read<ExpenseCubit>().state;
+      if (expenseState is ExpenseLoaded) {
+        context.read<BudgetCubit>().recalculateBudgetSpending(
+          authState.user.id, 
+          expenseState.expenses,
+        );
+      }
     }
   }
 
@@ -399,24 +402,7 @@ class _BudgetSettingsScreenState extends State<BudgetSettingsScreen> {
   }
 
   IconData _getCategoryIcon(String category) {
-    switch (category) {
-      case 'Food':
-        return Icons.restaurant;
-      case 'Transport':
-        return Icons.directions_car;
-      case 'Shopping':
-        return Icons.shopping_bag;
-      case 'Bills':
-        return Icons.receipt;
-      case 'Entertainment':
-        return Icons.movie;
-      case 'Health':
-        return Icons.local_hospital;
-      case 'Education':
-        return Icons.school;
-      default:
-        return Icons.category;
-    }
+    return AppCategories.getCategoryIcon(category);
   }
 
   void _showAddBudgetDialog() {
